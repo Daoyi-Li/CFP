@@ -49,13 +49,13 @@ python main_o2o.py --run_group=reproduce --agent.alpha=100 --discount=0.99 --env
 ```
 #### CFP
 ``` bash
-python main_warmup.py --run_group=reproduce --agent=agents/acfql.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/FQL/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax --agent.actor_type=best-of-n --agent.actor_num_samples=32
+python main_warmup.py --run_group=reproduce --agent=agents/acfql.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/QC/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax --agent.actor_type=best-of-n --agent.actor_num_samples=32
 ```
 
 ### FQL
 #### O2O
 ``` bash
-python main_o2o.py --run_group=reproduce --agent.alpha=100 --discount=0.99 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=1  
+python main_o2o.py --run_group=reproduce --agent.alpha=300 --discount=0.99 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=1  
 ```
 #### CFP
 ``` bash
@@ -104,6 +104,8 @@ Remember to confirm that __--sparse=True__
 ### Cube Quadruple
 Remember to add __--ogbench_dataset_dir=Real/Path/To/Your/cube-quadruple-play-100m-v0/__
 to make sure that the code is using the 100M dataset.
+
+
 
 ## Dataset
 For OGBench, we use the default dataset (except for Cube Quadruple). Generally, the corresponding dataset is automatically downloaded when the code is run for the first time. Please ensure you are using the "play" and "singletask" versions. 
