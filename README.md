@@ -59,7 +59,7 @@ python main_o2o.py --run_group=reproduce --agent.alpha=300 --discount=0.99 --env
 ```
 #### CFP
 ``` bash
-python main_warmup.py --run_group=reproduce --agent=agents/acfql.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=1 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/FQL/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax
+python main_warmup.py --run_group=reproduce --agent=agents/acfql.py --agent.alpha=300 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=1 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/FQL/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax
 ```
 
 ### QCFQL
