@@ -48,6 +48,7 @@ q_table.py
 main_rlpd.py
 train_cfp_from_expert_dataset.py
 train_o2o_from_expert_dataset.py
+pretrained_actors/
 *.txt
 *.pdf
 *.png
