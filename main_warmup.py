@@ -734,7 +734,6 @@ def main(_):
     if FLAGS.skip_offline_training and FLAGS.critic_warmup_steps > 0:
         print(f"\n{'='*80}")
         print(f"Starting Critic Warmup for {FLAGS.critic_warmup_steps} steps")
-        print("(Actor parameters frozen, only Critic will be updated)")
         print(f"{'='*80}\n")
         
         warmup_init_time = time.time()
