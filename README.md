@@ -32,7 +32,7 @@ pip install ogbench==1.1.2
 ```
 
 ## Run
-We provide pretrained actor under `/pretrained_actors/`. You can simply reuse them!
+We provide pretrained actor in `Supplementary Material`. You can simply reuse them!
 
 If you want to run the pretrained actor by yourself, please run
 ``` bash
