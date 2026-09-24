@@ -286,7 +286,6 @@ class Actor(nn.Module):
 
 
 class QNetwork(nn.Module):
-    """单个Q网络，支持batch normalization"""
     use_batch_norm: bool = True
     batch_norm_momentum: float = 0.99
     hidden_dims: Sequence[int] = (512, 512)
@@ -309,7 +308,6 @@ class QNetwork(nn.Module):
 
 
 class DualQNetwork(nn.Module):
-    """显式定义的双Q网络，避免vmap问题"""
     hidden_dims: Sequence[int]
     layer_norm: bool = True
     encoder: nn.Module = None
@@ -318,7 +316,6 @@ class DualQNetwork(nn.Module):
     crossq_style: bool = False
 
     def setup(self):
-        # 显式定义两个独立的Q网络
         self.q1_net = QNetwork(
             use_batch_norm=self.use_batch_norm,
             batch_norm_momentum=self.batch_norm_momentum,
@@ -331,27 +328,21 @@ class DualQNetwork(nn.Module):
         )
 
     def __call__(self, observations, actions=None, training: bool = True):
-        """返回两个Q值，形状为(2, batch_size)"""
         if self.encoder is not None:
             observations = self.encoder(observations)
             
         if actions is None:
             actions = jnp.zeros_like(observations[..., :1])
-
-        # 分别计算两个Q值
         q1 = self.q1_net(observations, actions, training=training)
         q2 = self.q2_net(observations, actions, training=training)
-        
-        # 堆叠成(2, batch_size)的形状，与原来的ensemble输出保持一致
+
         return jnp.stack([q1, q2], axis=0)
 
 
-# 替换原来的Value类
 class Value(nn.Module):
-    """Value/critic网络，使用显式双Q网络"""
     hidden_dims: Sequence[int]
     layer_norm: bool = True
-    num_ensembles: int = 2  # 保持兼容性，但实际上固定为2
+    num_ensembles: int = 2  
     encoder: nn.Module = None
     use_batch_norm: bool = False
     batch_norm_momentum: float = 0.99
@@ -359,7 +350,7 @@ class Value(nn.Module):
 
     def setup(self):
         if self.num_ensembles != 2:
-            raise ValueError("这个实现只支持2个Q网络")
+            raise ValueError("This implementation only supports two Q networks.")
             
         self.dual_q = DualQNetwork(
             hidden_dims=self.hidden_dims,
@@ -371,7 +362,6 @@ class Value(nn.Module):
         )
 
     def __call__(self, observations, actions=None, training: bool = True):
-        """返回Q值，形状与原来的ensemble输出一致"""
         return self.dual_q(observations, actions, training=training)
 
 
