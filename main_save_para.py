@@ -17,7 +17,6 @@ from evaluation import evaluate
 from agents import agents
 import numpy as np
 
-# 导入Actor保存函数
 from utils.save_actor_utils import save_actor_params, save_actor_params_lightweight
 
 if 'CUDA_VISIBLE_DEVICES' in os.environ:
@@ -61,7 +60,6 @@ flags.DEFINE_bool('save_all_online_states', False, "save all trajectories to npy
 
 flags.DEFINE_bool('save_actor_on_eval', True, "save actor parameters during evaluation")
 flags.DEFINE_string('actor_save_format', 'flax', "actor save format: 'flax' or 'pickle' or 'lightweight'")
-
 
 class LoggingHelper:
     def __init__(self, csv_loggers, wandb_logger):
