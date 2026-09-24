@@ -36,7 +36,7 @@ We provide pretrained actor in `Supplementary Material`. You can simply reuse th
 
 If you want to run the pretrained actor by yourself, please run
 ``` bash
-python main_save_para.py --run_group=any_network_emb --agent=agents/acfql.py   --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5
+python main_save_para.py --run_group=reproduce --agent=agents/acfql.py   --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5
 ```
 This will save the pretrained actor once the offline training is done.
 
@@ -49,7 +49,7 @@ python main_o2o.py --run_group=reproduce --agent.alpha=100 --discount=0.99 --env
 ```
 #### CFP
 ``` bash
-python main_warmup.py --run_group=any_network_emb --agent=agents/acfql.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/FQL/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax --agent.actor_type=best-of-n --agent.actor_num_samples=32
+python main_warmup.py --run_group=reproduce --agent=agents/acfql.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/FQL/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax --agent.actor_type=best-of-n --agent.actor_num_samples=32
 ```
 
 ### FQL
@@ -59,7 +59,7 @@ python main_o2o.py --run_group=reproduce --agent.alpha=100 --discount=0.99 --env
 ```
 #### CFP
 ``` bash
-python main_warmup.py --run_group=any_network_emb --agent=agents/acfql.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=1 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/FQL/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax
+python main_warmup.py --run_group=reproduce --agent=agents/acfql.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=1 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/FQL/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax
 ```
 
 ### QCFQL
@@ -69,7 +69,7 @@ python main_o2o.py --run_group=reproduce --agent.alpha=100 --discount=0.99 --env
 ```
 #### CFP
 ``` bash
-python main_warmup.py --run_group=any_network_emb --agent=agents/acfql.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/QCFQL/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax
+python main_warmup.py --run_group=reproduce --agent=agents/acfql.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/QCFQL/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax
 ```
 
 
@@ -80,7 +80,7 @@ python main_o2o.py --run_group=reproduce --agent=agents/acfql_nstep.py --agent.a
 ```
 #### CFP
 ``` bash
-python main_warmup.py --run_group=any_network_emb --agent=agents/acfql_nstep.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/QCFQL-nstep/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax
+python main_warmup.py --run_group=reproduce --agent=agents/acfql_nstep.py --agent.alpha=100 --env_name=cube-triple-play-singletask-task1-v0 --sparse=False --horizon_length=5 --skip_offline_training=True --critic_warmup_steps=10000 --load_actor_checkpoint=/Your/Path/To/CFP/pretrained_actors/QCFQL-nstep/cube-triple-play-singletask-task1-v0/actor_checkpoints/actor_step_1000000.flax
 ```
 
 ## Check list

@@ -17,7 +17,6 @@ from evaluation import evaluate
 from agents import agents
 import numpy as np
 
-# 导入Actor保存/加载函数
 from utils.save_actor_utils import save_actor_params, save_actor_params_lightweight, load_actor_params
 from utils.save_critic_utils import save_critic_params, load_critic_into_agent
 if 'CUDA_VISIBLE_DEVICES' in os.environ:
@@ -60,19 +59,15 @@ flags.DEFINE_bool('use_q_in_offline', True, "define whether to update through q 
 
 flags.DEFINE_bool('save_all_online_states', False, "save all trajectories to npy")
 
-# Actor保存相关flags
 flags.DEFINE_bool('save_actor_on_eval', True, "save actor parameters during evaluation")
 flags.DEFINE_string('actor_save_format', 'flax', "actor save format: 'flax' or 'pickle' or 'lightweight'")
 
-# Actor加载相关flags
 flags.DEFINE_string('load_actor_checkpoint', None, 'Path to pretrained actor checkpoint to load')
 flags.DEFINE_bool('skip_offline_training', False, 'Skip offline training and load pretrained actor')
 flags.DEFINE_integer('critic_warmup_steps', 10000, 'Number of steps to warmup critic before online training')
 flags.DEFINE_bool('cross_architecture_load', False, 'Load from ActorVectorFieldEmb to Transformer architecture')
 
 flags.DEFINE_integer('more_critic', 1, "define the more critic update")
-
-# OGBench多数据集加载相关flags
 flags.DEFINE_integer('num_datasets_for_buffer', 10, 'Number of OGBench datasets to randomly load for replay buffer initialization. -1 means use only the first dataset (default behavior), 0 means load all datasets, >0 means randomly sample that many datasets.')
 
 
@@ -93,7 +88,7 @@ class LoggingHelper:
 
 
 def save_actor_if_enabled(agent, save_dir, step, phase=""):
-    """保存Actor参数（如果启用）"""
+
     if FLAGS.save_actor_on_eval:
         try:
             if FLAGS.actor_save_format == 'lightweight':
@@ -107,10 +102,7 @@ def save_actor_if_enabled(agent, save_dir, step, phase=""):
 
 
 def recursive_update_params(target_params, source_params, prefix="", updated_paths=None):
-    """
-    递归地将source_params中的叶子节点参数更新到target_params中
-    （用于同架构加载）
-    """
+
     if updated_paths is None:
         updated_paths = []
     
@@ -144,20 +136,7 @@ def recursive_update_params(target_params, source_params, prefix="", updated_pat
 
 
 def recursive_map_with_details(target_params, source_params, source_prefix, target_prefix, mapping_records):
-    """
-    递归映射参数并记录详细的映射关系
-    
-    Args:
-        target_params: 目标参数字典
-        source_params: 源参数字典
-        source_prefix: 源路径前缀
-        target_prefix: 目标路径前缀
-        mapping_records: 映射记录列表
-    
-    Returns:
-        updated_params: 更新后的目标参数
-        mapping_records: 更新后的映射记录
-    """
+
     if hasattr(target_params, 'unfreeze'):
         target_params = target_params.unfreeze()
     else:
@@ -169,7 +148,7 @@ def recursive_map_with_details(target_params, source_params, source_prefix, targ
         
         if isinstance(value, dict):
             if key in target_params:
-                # 递归处理嵌套字典
+
                 target_params[key], mapping_records = recursive_map_with_details(
                     target_params[key],
                     value,
@@ -180,13 +159,11 @@ def recursive_map_with_details(target_params, source_params, source_prefix, targ
             else:
                 print(f"    ⚠ Warning: Target key '{target_path}' not found")
         else:
-            # 叶子节点 - 实际的参数（权重、偏置等）
             if key in target_params:
-                # 获取参数形状信息
+
                 source_shape = value.shape if hasattr(value, 'shape') else 'N/A'
                 target_shape = target_params[key].shape if hasattr(target_params[key], 'shape') else 'N/A'
-                
-                # 检查形状是否匹配
+ 
                 if source_shape == target_shape:
                     target_params[key] = value
                     mapping_records.append({
@@ -210,20 +187,6 @@ def recursive_map_with_details(target_params, source_params, source_prefix, targ
 
 
 def map_embedding_params(source_emb_params, target_emb_params, source_name, target_name, mapping_records):
-    """
-    映射embedding参数并记录详细映射关系
-    
-    Args:
-        source_emb_params: 源参数
-        target_emb_params: 目标参数
-        source_name: 源组件名称（如 'actor_onestep_flow.obs_encoder'）
-        target_name: 目标组件名称（如 'actor_transformer.obs_encoder'）
-        mapping_records: 映射记录列表
-    
-    Returns:
-        updated_params: 更新后的目标参数
-        mapping_records: 更新后的映射记录
-    """
     print(f"\n  {'='*70}")
     print(f"  Mapping: {source_name} → {target_name}")
     print(f"  {'='*70}")
@@ -240,7 +203,6 @@ def map_embedding_params(source_emb_params, target_emb_params, source_name, targ
 
 
 def print_mapping_summary(mapping_records):
-    """打印映射摘要表格"""
     print(f"\n{'='*100}")
     print("PARAMETER MAPPING SUMMARY")
     print(f"{'='*100}")
@@ -252,7 +214,6 @@ def print_mapping_summary(mapping_records):
         source = record['source']
         target = record['target']
         
-        # 缩短路径以便显示
         if len(source) > 48:
             source = '...' + source[-45:]
         if len(target) > 48:
@@ -260,13 +221,11 @@ def print_mapping_summary(mapping_records):
         
         print(f"{status:<8} {source:<50} {target:<50}")
         
-        # 如果有形状不匹配，显示详细信息
         if '✗' in status:
             print(f"         Shape: {record['shape']}")
     
     print(f"{'-'*100}")
-    
-    # 统计
+
     success_count = sum(1 for r in mapping_records if r['status'] == '✓')
     fail_count = sum(1 for r in mapping_records if '✗' in r['status'])
     
@@ -277,18 +236,7 @@ def print_mapping_summary(mapping_records):
 
 
 def analyze_transformer_structure(target_params):
-    """
-    分析Transformer网络结构，识别自动命名的Sequential组件
-    
-    由于Transformer使用@nn.compact，Sequential会被自动命名为Dense_0, Dense_1等
-    我们需要根据结构推断哪些是obs_encoder, time_embedding, velocity_head
-    
-    Returns:
-        dict: 包含识别出的组件映射 {'obs_encoder': key, 'time_embedding': key, 'velocity_head': key}
-    """
     component_map = {}
-    
-    # 收集所有Dense和MLP组件
     dense_keys = [k for k in target_params.keys() if k.startswith('Dense_')]
     mlp_keys = [k for k in target_params.keys() if k.startswith('MLP_')]
     
@@ -296,12 +244,6 @@ def analyze_transformer_structure(target_params):
     print(f"  - Found Dense layers: {dense_keys}")
     print(f"  - Found MLP layers: {mlp_keys}")
     print(f"  - Found other keys: {[k for k in target_params.keys() if not k.startswith('Dense_') and not k.startswith('MLP_') and not k.startswith('layer_')]}")
-    
-    # obs_encoder: 通常是前2个Dense层 (d_model//2, d_model)
-    # time_embedding: 通常是接下来的3个Dense层 (d_model//4, d_model//2, d_model)
-    # velocity_head: 通常是MLP_0或者最后的Dense层组
-    
-    # 按照Dense_数字排序
     dense_keys_sorted = sorted(dense_keys, key=lambda x: int(x.split('_')[1]))
     
     if len(dense_keys_sorted) >= 5:
@@ -310,10 +252,8 @@ def analyze_transformer_structure(target_params):
         # time_embedding: Dense_2, Dense_3, Dense_4
         component_map['time_embedding'] = dense_keys_sorted[2:5]
     elif len(dense_keys_sorted) >= 2:
-        # 只有obs_encoder
         component_map['obs_encoder'] = dense_keys_sorted[:2]
-    
-    # velocity_head: MLP_0
+
     if mlp_keys:
         component_map['velocity_head'] = mlp_keys[0]
     
@@ -326,25 +266,10 @@ def analyze_transformer_structure(target_params):
 
 def map_sequential_params(source_params, target_params_dict, source_name, target_name, 
                           target_keys, mapping_records):
-    """
-    映射Sequential的参数到多个自动命名的Dense层
-    
-    Args:
-        source_params: 源Sequential参数 (如 obs_encoder)
-        target_params_dict: 目标参数字典
-        source_name: 源名称
-        target_name: 目标名称前缀
-        target_keys: 目标Dense层的键列表 (如 ['Dense_0', 'Dense_1'])
-        mapping_records: 映射记录
-    """
     print(f"\n  {'='*70}")
     print(f"  Mapping: {source_name} → {target_name} ({target_keys})")
     print(f"  {'='*70}")
     
-    # 如果source_params是Sequential，它的结构是: {'layers_0': {...}, 'layers_1': {...}}
-    # 我们需要映射到target的 Dense_0, Dense_1等
-    
-    # 获取source中的layer keys并排序
     if isinstance(source_params, dict):
         source_layer_keys = sorted([k for k in source_params.keys() if k.startswith('layers_')])
     else:
@@ -352,14 +277,10 @@ def map_sequential_params(source_params, target_params_dict, source_name, target
     
     if len(source_layer_keys) != len(target_keys):
         print(f"    ⚠ Warning: Layer count mismatch. Source: {len(source_layer_keys)}, Target: {len(target_keys)}")
-    
-    # 逐层映射
     for i, (source_key, target_key) in enumerate(zip(source_layer_keys, target_keys)):
         if source_key in source_params and target_key in target_params_dict:
             full_source_path = f"{source_name}.{source_key}"
             full_target_path = f"{target_name}.{target_key}"
-            
-            # 递归映射这一层的参数
             target_params_dict[target_key], mapping_records = recursive_map_with_details(
                 target_params_dict[target_key],
                 source_params[source_key],
@@ -373,15 +294,7 @@ def map_sequential_params(source_params, target_params_dict, source_name, target
 
 def load_cross_architecture_actor(checkpoint_path, agent_class, seed, 
                                    example_batch, config, save_format='flax'):
-    """
-    从ActorVectorFieldEmb加载参数到FlowMatchingTransformerActor
-    
-    映射关系：
-    - actor_onestep_flow.obs_encoder -> actor_transformer.[Dense_0, Dense_1]
-    - actor_onestep_flow.action_proj -> actor_transformer.action_proj
-    - actor_onestep_flow.time_embedding -> actor_transformer.[Dense_2, Dense_3, Dense_4]
-    - actor_onestep_flow.output_mlp -> actor_transformer.MLP_0 (velocity_head)
-    """
+
     print(f"\n{'='*100}")
     print("CROSS-ARCHITECTURE PARAMETER LOADING")
     print(f"{'='*100}")
@@ -390,15 +303,13 @@ def load_cross_architecture_actor(checkpoint_path, agent_class, seed,
     print(f"Checkpoint Path:     {checkpoint_path}")
     print(f"{'='*100}\n")
     
-    # 1. 加载源参数
     try:
         actor_data = load_actor_params(checkpoint_path, save_format=save_format)
         print(f"✓ Loaded checkpoint from step: {actor_data.get('step', 'unknown')}\n")
     except Exception as e:
         print(f"✗ Error loading checkpoint: {e}")
         raise
-    
-    # 2. 创建新agent（随机初始化）
+
     print("Creating new transformer agent with random initialization...")
     agent = agent_class.create(
         seed=seed,
@@ -411,14 +322,12 @@ def load_cross_architecture_actor(checkpoint_path, agent_class, seed,
     # print(example_batch['observations'].shape)
     # print(example_batch['actions'].shape)
     
-    # 3. 检查是否有actor_onestep_flow参数
     if 'actor_onestep_flow' not in actor_data:
         raise ValueError("Checkpoint does not contain 'actor_onestep_flow' parameters")
     
     source_params = actor_data['actor_onestep_flow']
     print(f"Source modules found: {list(source_params.keys())}")
     
-    # 4. 获取目标网络参数
     network_params = dict(agent.network.params)
     
     if 'modules_actor_transformer' not in network_params:
@@ -427,17 +336,13 @@ def load_cross_architecture_actor(checkpoint_path, agent_class, seed,
     target_params = dict(network_params['modules_actor_transformer'])
     print(f"Target modules found: {list(target_params.keys())}")
     
-    # 5. 分析Transformer结构，识别自动命名的组件
     component_map = analyze_transformer_structure(target_params)
-    
-    # 6. 参数映射 - 使用详细记录
     mapping_records = []
     
     print(f"\n{'='*100}")
     print("STARTING PARAMETER MAPPING")
     print(f"{'='*100}")
     
-    # 映射 obs_encoder (2-layer MLP)
     if 'obs_encoder' in source_params and 'obs_encoder' in component_map:
         target_params, mapping_records = map_sequential_params(
             source_params['obs_encoder'],
@@ -449,8 +354,6 @@ def load_cross_architecture_actor(checkpoint_path, agent_class, seed,
         )
     else:
         print("\n  ⚠ WARNING: obs_encoder not found or could not be identified")
-    
-    # 映射 action_proj (single Dense layer)
     if 'action_proj' in source_params and 'action_proj' in target_params:
         target_params['action_proj'], mapping_records = map_embedding_params(
             source_params['action_proj'],
@@ -461,8 +364,7 @@ def load_cross_architecture_actor(checkpoint_path, agent_class, seed,
         )
     else:
         print("\n  ⚠ WARNING: action_proj not found in source or target")
-    
-    # 映射 time_embedding (3-layer MLP)
+
     if 'time_embedding' in source_params and 'time_embedding' in component_map:
         target_params, mapping_records = map_sequential_params(
             source_params['time_embedding'],
@@ -474,8 +376,6 @@ def load_cross_architecture_actor(checkpoint_path, agent_class, seed,
         )
     else:
         print("\n  ⚠ WARNING: time_embedding not found or could not be identified")
-    
-    # 映射 output_mlp -> velocity_head (MLP network)
     if 'output_mlp' in source_params and 'velocity_head' in component_map:
         velocity_head_key = component_map['velocity_head']
         print(f"\n  {'='*70}")
@@ -492,15 +392,12 @@ def load_cross_architecture_actor(checkpoint_path, agent_class, seed,
     else:
         print("\n  ⚠ WARNING: output_mlp or velocity_head not found or could not be identified")
     
-    # 7. 打印详细的映射摘要表格
     print_mapping_summary(mapping_records)
     
-    # 8. 更新网络参数
     network_params['modules_actor_transformer'] = target_params
     new_network = agent.network.replace(params=network_params)
     agent = agent.replace(network=new_network)
     
-    # 9. 总结
     success_count = sum(1 for r in mapping_records if r['status'] == '✓')
     fail_count = sum(1 for r in mapping_records if '✗' in r['status'])
     
@@ -548,24 +445,12 @@ def load_cross_architecture_actor(checkpoint_path, agent_class, seed,
 def load_and_create_agent_with_pretrained_actor(checkpoint_path, agent_class, seed, 
                                                 example_batch, config, save_format='flax',
                                                 cross_architecture=False):
-    """
-    加载预训练的actor参数并创建agent
-    
-    Args:
-        checkpoint_path: actor checkpoint文件路径
-        agent_class: agent类
-        seed: 随机种子
-        example_batch: 示例批次
-        config: 配置
-        save_format: checkpoint保存格式
-        cross_architecture: 是否进行跨架构加载（ActorVectorFieldEmb -> Transformer）
-    """
+
     if cross_architecture:
         return load_cross_architecture_actor(
             checkpoint_path, agent_class, seed, example_batch, config, save_format
         )
-    
-    # 原有的同架构加载逻辑
+
     print(f"\n{'='*80}")
     print(f"Loading pretrained actor from: {checkpoint_path}")
     print(f"{'='*80}\n")
@@ -626,33 +511,18 @@ def load_and_create_agent_with_pretrained_actor(checkpoint_path, agent_class, se
 
 
 def load_and_concatenate_datasets(env, dataset_paths, num_datasets, process_train_dataset_fn, verbose=True):
-    """
-    从OGBench数据集路径中随机加载多个数据集并拼接
     
-    Args:
-        env: 环境实例
-        dataset_paths: 所有可用的数据集路径列表
-        num_datasets: 要加载的数据集数量，-1表示只用第一个，0表示全部，>0表示随机采样
-        process_train_dataset_fn: 处理数据集的函数
-        verbose: 是否打印详细信息
-    
-    Returns:
-        concatenated_dataset: Dataset对象，包含拼接后的数据
-    """
     if num_datasets == -1:
-        # 默认行为：只返回None，调用方使用已加载的train_dataset
+
         return None
-    
-    # 确定要加载的数据集
+
     if num_datasets == 0:
-        # 加载所有数据集
         selected_paths = dataset_paths
         if verbose:
             print(f"\n{'='*80}")
             print(f"Loading ALL {len(selected_paths)} OGBench datasets for replay buffer")
             print(f"{'='*80}\n")
     else:
-        # 随机采样指定数量的数据集
         num_to_sample = min(num_datasets, len(dataset_paths))
         selected_paths = random.sample(dataset_paths, num_to_sample)
         if verbose:
@@ -661,7 +531,6 @@ def load_and_concatenate_datasets(env, dataset_paths, num_datasets, process_trai
             print(f"Selected indices: {[dataset_paths.index(p) for p in selected_paths]}")
             print(f"{'='*80}\n")
     
-    # 加载并处理所有选中的数据集
     all_datasets = []
     for i, dataset_path in enumerate(tqdm.tqdm(selected_paths, desc="Loading datasets")):
         ds, _ = make_ogbench_env_and_datasets(
@@ -676,16 +545,14 @@ def load_and_concatenate_datasets(env, dataset_paths, num_datasets, process_trai
         
         if verbose and (i + 1) % 5 == 0:
             print(f"  Loaded {i + 1}/{len(selected_paths)} datasets")
-    
-    # 拼接所有数据集
+
     if verbose:
         print(f"\nConcatenating {len(all_datasets)} datasets...")
     
     concatenated_data = {}
     for key in all_datasets[0].keys():
         concatenated_data[key] = np.concatenate([ds[key] for ds in all_datasets], axis=0)
-    
-    # 创建新的Dataset对象
+
     concatenated_dataset = Dataset.create(**concatenated_data)
     
     if verbose:
@@ -700,13 +567,9 @@ def load_and_concatenate_datasets(env, dataset_paths, num_datasets, process_trai
 
 def main(_):
     agent_name = FLAGS.agent['agent_name']
-    task_name = FLAGS.env_name
-    base_seed = FLAGS.seed
-    exp_name = f"{agent_name}_{task_name}_{base_seed}"
+    #run = setup_wandb(project='cfp', group=FLAGS.run_group, name=exp_name)
     
-    run = setup_wandb(project='cfp', group=FLAGS.run_group, name=exp_name)
-    
-    FLAGS.save_dir = os.path.join(FLAGS.save_dir, wandb.run.project, FLAGS.run_group, FLAGS.env_name, exp_name)
+    FLAGS.save_dir = os.path.join(FLAGS.save_dir, FLAGS.run_group, "CFP", FLAGS.agent['agent_name'], f"{FLAGS.env_name}-{FLAGS.seed}")
     
     os.makedirs(FLAGS.save_dir, exist_ok=True)
     flag_dict = get_flag_dict()
@@ -716,7 +579,6 @@ def main(_):
 
     config = FLAGS.agent
     
-    # 数据加载
     if FLAGS.ogbench_dataset_dir is not None:
         assert FLAGS.dataset_replace_interval != 0
         assert FLAGS.dataset_proportion == 1.0
@@ -733,7 +595,6 @@ def main(_):
     else:
         env, eval_env, train_dataset, val_dataset = make_env_and_datasets(FLAGS.env_name)
 
-    # 设置随机种子
     random.seed(FLAGS.seed)
     np.random.seed(FLAGS.seed)
 
@@ -743,7 +604,7 @@ def main(_):
     discount = FLAGS.discount
     config["horizon_length"] = FLAGS.horizon_length
 
-    # 处理训练数据集
+
     def process_train_dataset(ds):
         ds = Dataset.create(**ds)
         if FLAGS.dataset_proportion < 1.0:
@@ -769,13 +630,11 @@ def main(_):
     
     agent_class = agents[config['agent_name']]
     
-    # ============ 关键修改：检查是否需要加载预训练actor ============
     if FLAGS.skip_offline_training and FLAGS.load_actor_checkpoint:
         print(f"\n{'='*80}")
         print("SKIPPING OFFLINE TRAINING - Loading pretrained actor")
         print(f"{'='*80}\n")
         
-        # 确定checkpoint格式
         if FLAGS.load_actor_checkpoint.endswith('.flax'):
             save_format = 'flax'
         elif FLAGS.load_actor_checkpoint.endswith('.pkl'):
@@ -783,7 +642,7 @@ def main(_):
         else:
             raise ValueError(f"Unsupported checkpoint format. Use .flax or .pkl")
         
-        # 加载预训练actor并创建agent
+
         agent = load_and_create_agent_with_pretrained_actor(
             checkpoint_path=FLAGS.load_actor_checkpoint,
             agent_class=agent_class,
@@ -797,7 +656,7 @@ def main(_):
         offline_steps_to_run = 0
         
     else:
-        # 正常创建agent
+
         print("Creating agent from scratch...")
         agent = agent_class.create(
             FLAGS.seed,
@@ -807,7 +666,6 @@ def main(_):
         )
         offline_steps_to_run = FLAGS.offline_steps
     
-    # ============ 设置日志 ============
     prefixes = ["eval", "env"]
     if offline_steps_to_run > 0:
         prefixes.append("offline_agent")
@@ -822,7 +680,6 @@ def main(_):
         wandb_logger=wandb,
     )
 
-    # ============ Offline训练（如果需要）============
     offline_init_time = time.time()
     
     if offline_steps_to_run > 0:
@@ -874,7 +731,6 @@ def main(_):
         
         save_actor_if_enabled(agent, FLAGS.save_dir, log_step, "offline_final")
     
-    # ============ Critic Warmup阶段（如果跳过offline训练）============
     if FLAGS.skip_offline_training and FLAGS.critic_warmup_steps > 0:
         print(f"\n{'='*80}")
         print(f"Starting Critic Warmup for {FLAGS.critic_warmup_steps} steps")
@@ -908,12 +764,11 @@ def main(_):
                 sequence_length=FLAGS.horizon_length, 
                 discount=discount
             )
-            
-            # 使用warmup_update（需要在agent中实现）
+
             if hasattr(agent, 'warmup_update'):
                 agent, warmup_info = agent.warmup_update(batch)
             else:
-                # 如果没有warmup_update，使用online_update
+
                 agent, warmup_info = agent.online_update(batch)
             
             if i % 500 == 0: 
@@ -944,8 +799,6 @@ def main(_):
         print(f"\nCritic warmup completed in {warmup_time:.2f} seconds")
         print(f"Total steps so far: {log_step}")
 
-    # ============ 准备Online训练 ============
-    # 如果跳过了offline训练且使用OGBench数据集，并且指定了加载多个数据集
     if (FLAGS.skip_offline_training and 
         FLAGS.ogbench_dataset_dir is not None and 
         FLAGS.num_datasets_for_buffer != -1):
@@ -962,7 +815,6 @@ def main(_):
         )
         
         if concatenated_dataset is not None:
-            # 使用拼接后的数据集
             train_dataset = concatenated_dataset
             print(f"Using concatenated dataset with size: {train_dataset.size}")
         else:
@@ -983,8 +835,6 @@ def main(_):
     data = defaultdict(list)
     online_init_time = time.time()
 
-    
-    # ============ Online训练 ============
     print(f"\n{'='*80}")
     print(f"Starting Online Training for {FLAGS.online_steps} steps")
     print(f"{'='*80}\n")
@@ -993,7 +843,6 @@ def main(_):
         log_step += 1
         online_rng, key = jax.random.split(online_rng)
 
-        # Action chunking执行
         if len(action_queue) == 0:
             action = agent.sample_actions(observations=ob, rng=key)
             action_chunk = np.array(action).reshape(-1, action_dim)
@@ -1019,7 +868,6 @@ def main(_):
                 env_info[key] = value
         logger.log(env_info, "env", step=log_step)
 
-        # 奖励调整
         if 'antmaze' in FLAGS.env_name and (
             'diverse' in FLAGS.env_name or 'play' in FLAGS.env_name or 'umaze' in FLAGS.env_name
         ):
@@ -1090,7 +938,6 @@ def main(_):
         print(f"Online critic saved: {online_critic_path}")
     end_time = time.time()
 
-    # ============ 清理和保存 ============
     for key, csv_logger in logger.csv_loggers.items():
         csv_logger.close()
 
@@ -1106,11 +953,11 @@ def main(_):
         if len(data["button_states"]) != 0:
             c_data["button_states"] = np.stack(data["button_states"], axis=0)
         np.savez(os.path.join(FLAGS.save_dir, "data.npz"), **c_data)
-
+    """
     if run is not None:
         with open(os.path.join(FLAGS.save_dir, 'token.tk'), 'w') as f:
             f.write(run.url)
-    
+    """
     print(f"\n{'='*80}")
     print("Training completed successfully!")
     print(f"Total steps: {log_step}")

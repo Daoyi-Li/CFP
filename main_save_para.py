@@ -26,19 +26,15 @@ if 'CUDA_VISIBLE_DEVICES' in os.environ:
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('run_group', 'cube-quadruple', 'Run group.')
+flags.DEFINE_string('run_group', 'reproduce', 'Run group.')
 flags.DEFINE_integer('seed', 0, 'Random seed.')
-flags.DEFINE_string('env_name', 'square-mh-low_dim', 'Environment (dataset) name.')
-
-# flags.DEFINE_string('env_name', 'cube-triple-play-singletask-task3-v0', 'Environment (dataset) name.')
+flags.DEFINE_string('env_name', 'cube-triple-play-singletask-task3-v0', 'Environment (dataset) name.')
 flags.DEFINE_string('save_dir', 'exp/', 'Save directory.')
-
 flags.DEFINE_integer('offline_steps', 1000000, 'Number of online steps.')
 flags.DEFINE_integer('online_steps', 1000000, 'Number of online steps.')
 flags.DEFINE_integer('buffer_size', 2000000, 'Replay buffer size.')
 flags.DEFINE_integer('log_interval', 5000, 'Logging interval.')
 flags.DEFINE_integer('eval_interval', 100000, 'Evaluation interval.')
-# flags.DEFINE_integer('eval_interval', 100, 'Evaluation interval.')
 flags.DEFINE_integer('save_interval', -1, 'Save interval.')
 flags.DEFINE_integer('start_training', 5000, 'when does training start')
 
@@ -50,10 +46,8 @@ flags.DEFINE_integer('eval_episodes', 50, 'Number of evaluation episodes.')
 flags.DEFINE_integer('video_episodes', 0, 'Number of video episodes for each task.')
 flags.DEFINE_integer('video_frame_skip', 3, 'Frame skip for videos.')
 
-# config_flags.DEFINE_config_file('agent', 'agents/acfql_gru.py', lock_config=False)
-# config_flags.DEFINE_config_file('agent', 'agents/acfql_gru_ablation_online.py', lock_config=False)
-config_flags.DEFINE_config_file('agent', 'agents/acfql_transformer_ablation_online.py', lock_config=False)
-# config_flags.DEFINE_config_file('agent', 'agents/acfql_ablation_online.py', lock_config=False)
+config_flags.DEFINE_config_file('agent', 'agents/acfql.py', lock_config=False)
+
 
 flags.DEFINE_float('dataset_proportion', 1.0, "Proportion of the dataset to use")
 flags.DEFINE_integer('dataset_replace_interval', 1000, 'Dataset replace interval, used for large datasets because of memory constraints')
@@ -65,11 +59,10 @@ flags.DEFINE_bool('use_q_in_offline', True, "define whether to update through q 
 
 flags.DEFINE_bool('save_all_online_states', False, "save all trajectories to npy")
 
-# 新增Actor保存相关flags
 flags.DEFINE_bool('save_actor_on_eval', True, "save actor parameters during evaluation")
 flags.DEFINE_string('actor_save_format', 'flax', "actor save format: 'flax' or 'pickle' or 'lightweight'")
 
-save_points = [1, 10000, 100000, 250000, 500000]
+
 class LoggingHelper:
     def __init__(self, csv_loggers, wandb_logger):
         self.csv_loggers = csv_loggers
@@ -86,15 +79,6 @@ class LoggingHelper:
             pass
 
 def save_actor_if_enabled(agent, save_dir, step, phase=""):
-    """
-    如果启用了Actor保存，则保存Actor参数
-    
-    Args:
-        agent: 训练的agent
-        save_dir: 保存目录
-        step: 当前步数
-        phase: 训练阶段标识 ("offline" 或 "online")
-    """
     if FLAGS.save_actor_on_eval:
         try:
             if FLAGS.actor_save_format == 'lightweight':
@@ -108,12 +92,10 @@ def save_actor_if_enabled(agent, save_dir, step, phase=""):
 
 def main(_):
     agent_name = FLAGS.agent['agent_name']
-    task_name = FLAGS.env_name
-    base_seed = FLAGS.seed
-    exp_name = f"{agent_name}_{task_name}_{base_seed}"
-    run = setup_wandb(project='cfp', group=FLAGS.run_group, name=exp_name)
+
+    #run = setup_wandb(project='cfp', group=FLAGS.run_group, name=exp_name)
     
-    FLAGS.save_dir = os.path.join(FLAGS.save_dir, wandb.run.project, FLAGS.run_group, FLAGS.env_name, exp_name)
+    FLAGS.save_dir = os.path.join(FLAGS.save_dir, FLAGS.run_group, "save", agent_name, f"{FLAGS.env_name}-{FLAGS.seed}")
     os.makedirs(FLAGS.save_dir, exist_ok=True)
     flag_dict = get_flag_dict()
 
@@ -225,16 +207,13 @@ def main(_):
         
         agent, offline_info = agent.offline_update(batch)
         
-
+        """
         if i % FLAGS.log_interval == 0:
             logger.log(offline_info, "offline_agent", step=log_step)
-        
+        """
         # saving
         if FLAGS.save_interval > 0 and i % FLAGS.save_interval == 0:
             save_agent(agent, FLAGS.save_dir, log_step)
-        
-        if i in save_points:
-            save_actor_if_enabled(agent, FLAGS.save_dir, log_step, "offline_final")
 
         # eval
         if i == FLAGS.offline_steps - 1 or \
@@ -250,14 +229,12 @@ def main(_):
             )
             logger.log(eval_info, "eval", step=log_step)
             
-            # # 在评估后保存Actor参数  <--- MODIFICATION: This line is removed from here.
-
-    # <--- MODIFICATION: Save actor parameters ONCE after the entire offline training loop is finished.
     print(f"\nOffline training finished after {log_step} steps. Saving final actor parameters...")
     save_actor_if_enabled(agent, FLAGS.save_dir, log_step, "offline_final")
+    """
     if run is not None:
         with open(os.path.join(FLAGS.save_dir, 'token.tk'), 'w') as f:
             f.write(run.url)
-
+    """
 if __name__ == '__main__':
     app.run(main)

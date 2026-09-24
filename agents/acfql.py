@@ -11,7 +11,7 @@ from utils.encoders import encoder_modules
 from utils.flax_utils import ModuleDict, TrainState, nonpytree_field
 from utils.networks import ActorVectorField, Value
 
-class ACFQLAgent_Finetune(flax.struct.PyTreeNode):
+class ACFQLAgent(flax.struct.PyTreeNode):
     """Flow Q-learning (FQL) agent with action chunking. 
     """
 

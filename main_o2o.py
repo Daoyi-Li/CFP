@@ -65,10 +65,10 @@ class LoggingHelper:
         self.wandb_logger.log({f'{prefix}/{k}': v for k, v in data.items()}, step=step)
 
 def main(_):
-    exp_name = get_exp_name(FLAGS.seed)
-    run = setup_wandb(project='cfp', group=FLAGS.run_group, name=exp_name)
+    #exp_name = get_exp_name(FLAGS.seed)
+    #run = setup_wandb(project='cfp', group=FLAGS.run_group, name=exp_name)
     
-    FLAGS.save_dir = os.path.join(FLAGS.save_dir, wandb.run.project, FLAGS.run_group, FLAGS.env_name, exp_name)
+    FLAGS.save_dir = os.path.join(FLAGS.save_dir, FLAGS.run_group, "O2O", FLAGS.agent['agent_name'], f"{FLAGS.env_name}-{FLAGS.seed}")
     os.makedirs(FLAGS.save_dir, exist_ok=True)
     flag_dict = get_flag_dict()
 
@@ -179,10 +179,10 @@ def main(_):
         batch = train_dataset.sample_sequence(config['batch_size'], sequence_length=FLAGS.horizon_length, discount=discount)
 
         agent, offline_info = agent.online_update(batch)
-
+        """
         if i % FLAGS.log_interval == 0:
             logger.log(offline_info, "offline_agent", step=log_step)
-        
+        """
         # saving
         if FLAGS.save_interval > 0 and i % FLAGS.save_interval == 0:
             save_agent(agent, FLAGS.save_dir, log_step)
@@ -248,7 +248,8 @@ def main(_):
             if key.startswith("distance"):
                 env_info[key] = value
         # always log this at every step
-        logger.log(env_info, "env", step=log_step)
+
+        #logger.log(env_info, "env", step=log_step)
 
         if 'antmaze' in FLAGS.env_name and (
             'diverse' in FLAGS.env_name or 'play' in FLAGS.env_name or 'umaze' in FLAGS.env_name
@@ -326,8 +327,8 @@ def main(_):
             c_data["button_states"] = np.stack(data["button_states"], axis=0)
         np.savez(os.path.join(FLAGS.save_dir, "data.npz"), **c_data)
 
-    with open(os.path.join(FLAGS.save_dir, 'token.tk'), 'w') as f:
-        f.write(run.url)
+    #with open(os.path.join(FLAGS.save_dir, 'token.tk'), 'w') as f:
+        #f.write(run.url)
 
 if __name__ == '__main__':
     app.run(main)

@@ -37,6 +37,8 @@ test/
 result/
 exp/
 theory_actor/
+pretrained_actors/
+
 build_single_vs_multi_expert_dataset.py
 combined_six_panel_figure.py
 compute_cube_actor_overlap.py
@@ -48,7 +50,8 @@ q_table.py
 main_rlpd.py
 train_cfp_from_expert_dataset.py
 train_o2o_from_expert_dataset.py
-pretrained_actors/
+
+
 *.txt
 *.pdf
 *.png
