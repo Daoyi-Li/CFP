@@ -1,7 +1,3 @@
-"""
-Used to load custom dirs of OGBench datasets.
-Gotten from https://github.com/seohongpark/scalerl/blob/large_dataset/main.py
-"""
 import collections
 import os
 import platform
@@ -16,22 +12,7 @@ import ogbench
 
 
 def load_dataset(dataset_path, ob_dtype=np.float32, action_dtype=np.float32, compact_dataset=False, add_info=False, dataset_size=None):
-    """Load OGBench dataset.
 
-    Args:
-        dataset_path: Path to the dataset file.
-        ob_dtype: dtype for observations.
-        action_dtype: dtype for actions.
-        compact_dataset: Whether to return a compact dataset (True, without 'next_observations') or a regular dataset
-            (False, with 'next_observations').
-        add_info: Whether to add observation information ('qpos', 'qvel', and 'button_states') to the dataset.
-        dataset_size: (Optional) Size of the dataset.
-
-    Returns:
-        Dictionary containing the dataset. The dictionary contains the following keys: 'observations', 'actions',
-        'terminals', and 'next_observations' (if `compact_dataset` is False) or 'valids' (if `compact_dataset` is True).
-        If `add_info` is True, the dictionary may also contain additional keys for observation information.
-    """
     file = np.load(dataset_path)
 
     dataset = dict()
@@ -118,21 +99,7 @@ def make_ogbench_env_and_datasets(
         add_info=False,
         **env_kwargs,
 ):
-    """Make OGBench environment and load datasets.
 
-    Args:
-        dataset_name: Dataset name.
-        dataset_dir: Directory to save the datasets.
-        dataset_path: (Optional) Path to the dataset.
-        dataset_size: (Optional) Size of the dataset.
-        compact_dataset: Whether to return a compact dataset (True, without 'next_observations') or a regular dataset
-            (False, with 'next_observations').
-        env_only: Whether to return only the environment.
-        dataset_only: Whether to return only the dataset.
-        cur_env: Current environment (only used when `dataset_only` is True).
-        add_info: Whether to add observation information ('qpos', 'qvel', and 'button_states') to the datasets.
-        **env_kwargs: Keyword arguments to pass to the environment.
-    """
     # Make environment.
     splits = dataset_name.split('-')
     dataset_add_info = add_info

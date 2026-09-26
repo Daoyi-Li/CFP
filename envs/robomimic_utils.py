@@ -17,7 +17,6 @@ from utils.datasets import Dataset
 
 
 def is_robomimic_env(env_name):
-    """determine if an env is robomimic"""
     if "low_dim" not in env_name:
         return False
     task, dataset_type, hdf5_type = env_name.split("-")
@@ -138,10 +137,6 @@ def get_dataset(env, env_name):
 
 
 class RobomimicLowdimWrapper(gym.Env):
-    """
-    Environment wrapper for Robomimic environments with state observations.
-    Modified from https://github.com/real-stanford/diffusion_policy/blob/main/diffusion_policy/env/robomimic/robomimic_lowdim_wrapper.py
-    """
     def __init__(
         self,
         env,
@@ -223,7 +218,7 @@ class RobomimicLowdimWrapper(gym.Env):
             np.random.seed()
 
     def reset(self, options={}, **kwargs):
-        """Ignore passed-in arguments like seed"""
+
 
         self.t = 0
         self.episode_return, self.episode_length = 0, 0
