@@ -11,9 +11,6 @@ tfb = tfp.bijectors
 import jax
 import jax.numpy as jnp
 
-# Inspired by
-# https://github.com/deepmind/acme/blob/300c780ffeb88661a41540b99d3e25714e2efd20/acme/jax/networks/distributional.py#L163
-# but modified to only compute a mode.
 
 
 class TanhTransformedDistribution(tfd.TransformedDistribution):
